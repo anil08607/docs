@@ -35,20 +35,13 @@ and upload your `kicad_mod` and/or `kicad_sym` file.
 
 ### Importing KiCad Components using the CLI
 
-Using tscircuit's [open-source KiCad component converter](https://github.com/tscircuit/kicad-component-converter),
-we can convert KiCad files on the command line.
+Using [`tsci convert`](/command-line/tsci-convert), we can convert KiCad
+footprint files on the command line.
 
-First install the component converter:
-
-```bash
-npm install -g kicad-component-converter
-```
-
-Next, run the following command to convert your KiCad files:
+Run the following command to convert your KiCad file:
 
 ```bash
-# Convert a directory ./my-footprints.pretty to a tscircuit project
-kicad-component-converter convert-kicad-directory --input-dir ./my-footprints.pretty --output-dir ./my-tscircuit-footprints
+tsci convert MyFootprint.kicad_mod
 ```
 
 ### Importing `.kicad_pcb` files directly
@@ -69,13 +62,13 @@ circuit.add(
 ### Importing KiCad Components Programmatically
 
 ```bash
-bun add kicad-component-converter
+bun add kicad-to-circuit-json
 ```
 
 #### Import `.kicad_mod` files directly
 
-`kicad-component-converter` registers a bundler loader that lets you import KiCad
-footprints like any other module inside your tscircuit project:
+`tsci` registers a bundler loader that lets you import KiCad footprints like
+any other module inside your tscircuit project:
 
 ```tsx
 import kicadMod from "./footprint.kicad_mod"
@@ -92,14 +85,19 @@ export default () => {
 #### Convert KiCad files manually
 
 If you need to do the conversion yourself (for example inside a build script),
-you can read the `.kicad_mod` file and pass it through the parser:
+you can read the `.kicad_mod` file and pass it through the converter:
 
 ```tsx
-import { parseKicadModToCircuitJson } from "kicad-component-converter"
+import { KicadFootprintToCircuitJsonConverter } from "kicad-to-circuit-json"
 import { readFileSync } from "node:fs"
 
-const fileContent = readFileSync("SW_SP3T_PCM13.kicad_mod")
-const circuitJson = await parseKicadModToCircuitJson(fileContent)
+const converter = new KicadFootprintToCircuitJsonConverter()
+const fileContent = readFileSync("SW_SP3T_PCM13.kicad_mod", "utf-8")
+
+converter.addFile("SW_SP3T_PCM13.kicad_mod", fileContent)
+converter.runUntilFinished()
+
+const circuitJson = converter.getOutput()
 /* [
  *  {
  *    "type": "pcb_smtpad",
@@ -108,5 +106,6 @@ const circuitJson = await parseKicadModToCircuitJson(fileContent)
  */
 ```
 
-[Circuit JSON](https://github.com/tscircuit/circuit-json) can then be converted
-into regular tscircuit modules using [circuit-json-to-tscircuit](https://github.com/tscircuit/circuit-json-to-tscircuit)
+[Circuit JSON](https://github.com/tscircuit/circuit-json) can then be
+converted into regular tscircuit modules using
+[circuit-json-to-tscircuit](https://github.com/tscircuit/circuit-json-to-tscircuit)
